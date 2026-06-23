@@ -1,0 +1,413 @@
+<!-- Background Orbs for Ambient Glow -->
+<div class="bg-orb orb-1"></div>
+<div class="bg-orb orb-2"></div>
+<div class="bg-orb orb-3"></div>
+
+<div class="app-container">
+  <!-- HEADER / NAVIGATION -->
+  <header class="main-header">
+    <div class="logo" (click)="switchView('rooms')">
+      <i class="fa-solid fa-hotel logo-icon"></i>
+      <span class="logo-text">Reserva<span class="logo-accent">Easy</span></span>
+    </div>
+    <nav class="nav-menu" id="navMenu">
+      <a href="#" class="nav-link" [class.active]="currentView === 'rooms'" (click)="$event.preventDefault(); switchView('rooms')">
+        <i class="fa-solid fa-bed"></i> Habitaciones
+      </a>
+      <a href="#" class="nav-link" *ngIf="currentUser" [class.active]="currentView === 'my-bookings'" (click)="$event.preventDefault(); switchView('my-bookings')">
+        <i class="fa-solid fa-calendar-check"></i> Mis Reservas
+      </a>
+      <a href="#" class="nav-link" *ngIf="currentUser && currentUser.roles.includes('ROLE_ADMIN')" [class.active]="currentView === 'admin-panel'" (click)="$event.preventDefault(); switchView('admin-panel')">
+        <i class="fa-solid fa-sliders"></i> Panel Admin
+      </a>
+      <a href="#" class="nav-link" *ngIf="currentUser" [class.active]="currentView === 'files'" (click)="$event.preventDefault(); switchView('files')">
+        <i class="fa-solid fa-cloud-arrow-up"></i> Documentos
+      </a>
+    </nav>
+    <div class="user-auth-section">
+      <!-- Logged Out State -->
+      <ng-container *ngIf="!currentUser">
+        <button class="btn btn-outline" (click)="openAuth('login')">
+          <i class="fa-solid fa-right-to-bracket"></i> Iniciar Sesión
+        </button>
+        <button class="btn btn-primary" (click)="openAuth('register')">Registrarse</button>
+      </ng-container>
+
+      <!-- Logged In State -->
+      <ng-container *ngIf="currentUser">
+        <div class="user-badge">
+          <i class="fa-solid fa-circle-user"></i>
+          <span class="username-display">{{ currentUser.nombre }} ({{ currentUser.roles.includes('ROLE_ADMIN') ? 'Admin' : 'Usuario' }})</span>
+        </div>
+        <button class="btn btn-outline" (click)="onLogout()">
+          <i class="fa-solid fa-right-from-bracket"></i> Salir
+        </button>
+      </ng-container>
+    </div>
+  </header>
+
+  <!-- MAIN CONTENT AREA -->
+  <main class="main-content">
+
+    <!-- HERO SECTION -->
+    <section class="hero-section" *ngIf="currentView === 'rooms'">
+      <h1 class="hero-title">Encuentra tu estancia perfecta con un solo click</h1>
+      <p class="hero-subtitle">Disfruta de habitaciones exclusivas y gestiona tus reservas de forma rápida y segura.</p>
+    </section>
+
+    <!-- VIEW: ROOMS (CATALOG) -->
+    <section id="viewRooms" class="content-view" [class.active]="currentView === 'rooms'">
+      <div class="view-header">
+        <h2 class="section-title">Habitaciones Disponibles</h2>
+        <p class="section-desc">Selecciona entre nuestras mejores opciones diseñadas para tu comodidad.</p>
+      </div>
+      <div class="rooms-grid">
+        <div class="glass-card" *ngFor="let room of rooms">
+          <div class="room-card-header">
+            <span class="room-type">{{ room.tipo }}</span>
+            <span class="room-number">Hab. #{{ room.numero }}</span>
+          </div>
+          <div class="room-price-box">
+            <span class="room-price">${{ room.precio }}</span>
+            <span class="room-price-period"> / noche</span>
+          </div>
+          <div class="room-features">
+            <div class="feature-item">
+              <i class="fa-solid fa-bed"></i>
+              <span>Camas: {{ room.numeroCamas }}</span>
+            </div>
+            <div class="feature-item">
+              <i class="fa-solid fa-circle-check"></i>
+              <span class="status-badge" [class.status-available]="room.disponible" [class.status-unavailable]="!room.disponible">
+                {{ room.disponible ? 'Disponible' : 'No disponible' }}
+              </span>
+            </div>
+          </div>
+          <div class="room-actions">
+            <button class="btn btn-primary btn-block" *ngIf="room.disponible; else notAvailableBtn" (click)="openBookingModal(room.id!)">
+              <i class="fa-solid fa-calendar-plus"></i> Reservar
+            </button>
+            <ng-template #notAvailableBtn>
+              <button class="btn btn-outline btn-block" disabled>No disponible</button>
+            </ng-template>
+          </div>
+        </div>
+
+        <!-- No rooms empty state -->
+        <div class="loader-container" *ngIf="rooms.length === 0">
+          <i class="fa-solid fa-bed-slash" style="font-size: 3rem; margin-bottom: 10px;"></i>
+          <p>No hay habitaciones disponibles por el momento.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW: MY BOOKINGS -->
+    <section id="viewMyBookings" class="content-view" [class.active]="currentView === 'my-bookings'">
+      <div class="view-header">
+        <h2 class="section-title">Mis Reservaciones</h2>
+        <p class="section-desc">Revisa el historial y estado de tus reservaciones actuales y pasadas.</p>
+      </div>
+      <div class="bookings-list">
+        <div class="glass-card booking-card" *ngFor="let b of bookings">
+          <div class="booking-main">
+            <h4>{{ b.cuartoTipo }}</h4>
+            <p><i class="fa-solid fa-hashtag text-primary"></i> Reservación #{{ b.id }} — Habitación Nº {{ b.cuartoNumero }}</p>
+            <p style="margin-top: 5px; font-style: italic; color: var(--text-muted);">
+              {{ b.detalles ? 'Detalles: ' + b.detalles : 'Sin notas especiales' }}
+            </p>
+          </div>
+          <div class="booking-dates">
+            <div class="date-row">
+              <span class="date-label">Entrada:</span>
+              <div><strong>{{ b.fechaInicio }}</strong></div>
+            </div>
+            <div class="date-row">
+              <span class="date-label">Salida:</span>
+              <div><strong>{{ b.fechaFin }}</strong></div>
+            </div>
+          </div>
+          <div class="booking-cost">
+            ${{ b.precioTotal }} MXN
+            <div style="margin-top: 5px;">
+              <span class="status-badge" [class.status-available]="b.estado === 'CONFIRMADA'" [class.status-unavailable]="b.estado === 'CANCELADA'">
+                {{ b.estado }}
+              </span>
+            </div>
+          </div>
+          <div class="booking-actions">
+            <ng-container *ngIf="b.estado === 'CONFIRMADA'">
+              <button class="btn btn-outline" (click)="openBookingModal(b.cuartoId, b.id!)">
+                <i class="fa-solid fa-pen-to-square"></i>
+              </button>
+              <button class="btn btn-danger" (click)="onCancelBooking(b.id!)">
+                <i class="fa-solid fa-trash-can"></i> Cancelar
+              </button>
+            </ng-container>
+          </div>
+        </div>
+
+        <!-- No bookings empty state -->
+        <div class="loader-container" *ngIf="bookings.length === 0">
+          <i class="fa-solid fa-calendar-xmark" style="font-size: 3rem; margin-bottom: 10px;"></i>
+          <p>No tienes reservaciones registradas.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW: ADMIN PANEL -->
+    <section id="viewAdminPanel" class="content-view" [class.active]="currentView === 'admin-panel'">
+      <div class="view-header">
+        <h2 class="section-title">Panel de Administración</h2>
+        <p class="section-desc">Gestión integral del catálogo de habitaciones y reservaciones de todos los usuarios.</p>
+      </div>
+
+      <div class="admin-grid">
+        <!-- Admin Tool: Add/Edit Room -->
+        <div class="glass-card admin-form-card">
+          <h3 class="card-title-lg">
+            <i class="fa-solid fa-plus-circle"></i> 
+            {{ formRoomId ? 'Editar Habitación' : 'Agregar Nueva Habitación' }}
+          </h3>
+          <form (submit)="onSaveRoom()" class="form-grid">
+            <div class="form-group">
+              <label for="roomTipo">Tipo de Habitación</label>
+              <select id="roomTipo" name="roomTipo" [(ngModel)]="roomTipo" required>
+                <option value="Sencilla">Sencilla</option>
+                <option value="Doble">Doble</option>
+                <option value="Suite">Suite</option>
+                <option value="Presidencial">Presidencial</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="roomNumero">Número de Habitación</label>
+              <input type="number" id="roomNumero" name="roomNumero" [(ngModel)]="roomNumero" required min="1" placeholder="Ej: 101">
+            </div>
+            <div class="form-group">
+              <label for="roomPrecio">Precio por Noche (MXN)</label>
+              <input type="number" id="roomPrecio" name="roomPrecio" [(ngModel)]="roomPrecio" required min="1" step="0.01" placeholder="Ej: 1200.00">
+            </div>
+            <div class="form-group">
+              <label for="roomCamas">Número de Camas</label>
+              <input type="number" id="roomCamas" name="roomCamas" [(ngModel)]="roomCamas" required min="1" placeholder="Ej: 2">
+            </div>
+            <div class="form-group-full">
+              <button type="submit" class="btn btn-primary btn-block">Guardar Habitación</button>
+              <button type="button" class="btn btn-outline btn-block" *ngIf="formRoomId" (click)="onCancelRoomEdit()" style="margin-top: 10px;">
+                Cancelar Edición
+              </button>
+            </div>
+          </form>
+          
+          <!-- Existing rooms list inside admin panel for edit/delete -->
+          <div class="admin-rooms-list" style="margin-top: 30px;">
+            <h4 style="margin-bottom: 15px; font-family: var(--font-heading);">Habitaciones Existentes</h4>
+            <div style="max-height: 250px; overflow-y: auto;">
+              <div class="glass-panel" *ngFor="let rm of rooms" style="display: flex; justify-content: space-between; align-items: center; padding: 10px; margin-bottom: 8px; font-size: 13px; border: 1px solid var(--panel-border); border-radius: var(--radius-sm);">
+                <span>Hab. #{{ rm.numero }} - {{ rm.tipo }}</span>
+                <div>
+                  <button class="btn btn-outline" (click)="onEditRoom(rm)" style="padding: 4px 8px; font-size: 11px;"><i class="fa-solid fa-pen"></i></button>
+                  <button class="btn btn-danger" (click)="onDeleteRoom(rm.id!)" style="padding: 4px 8px; font-size: 11px; margin-left: 5px;"><i class="fa-solid fa-trash"></i></button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Admin Tool: System Reservations -->
+        <div class="glass-card admin-table-card">
+          <h3 class="card-title-lg"><i class="fa-solid fa-list-check"></i> Todas las Reservaciones</h3>
+          <div class="table-responsive">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Usuario</th>
+                  <th>Habitación</th>
+                  <th>Entrada</th>
+                  <th>Salida</th>
+                  <th>Total</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let b of adminBookings">
+                  <td>#{{ b.id }}</td>
+                  <td><strong>{{ b.usuarioUsername }}</strong><br><small>{{ b.usuarioEmail }}</small></td>
+                  <td>{{ b.cuartoTipo }} (Nº {{ b.cuartoNumero }})</td>
+                  <td>{{ b.fechaInicio }}</td>
+                  <td>{{ b.fechaFin }}</td>
+                  <td><strong>${{ b.precioTotal }} MXN</strong></td>
+                  <td>
+                    <span class="status-badge" [class.status-available]="b.estado === 'CONFIRMADA'" [class.status-unavailable]="b.estado === 'CANCELADA'">
+                      {{ b.estado }}
+                    </span>
+                  </td>
+                  <td>
+                    <button class="btn btn-outline btn-sm" *ngIf="b.estado === 'CONFIRMADA'" (click)="onCancelBooking(b.id!)">
+                      Cancelar
+                    </button>
+                    <span *ngIf="b.estado === 'CANCELADA'">—</span>
+                  </td>
+                </tr>
+                <tr *ngIf="adminBookings.length === 0">
+                  <td colspan="8" style="text-align: center;">No hay reservaciones registradas en el sistema.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW: FILES / DOCUMENTOS -->
+    <section id="viewFiles" class="content-view" [class.active]="currentView === 'files'">
+      <div class="view-header">
+        <h2 class="section-title">Documentos y Archivos</h2>
+        <p class="section-desc">Carga y descarga documentos de soporte para tus reservas (comprobantes de pago, identificaciones, etc.).</p>
+      </div>
+      <div class="files-grid">
+        <div class="glass-card">
+          <h3><i class="fa-solid fa-cloud-arrow-up text-primary"></i> Cargar Archivo</h3>
+          <div class="file-upload-zone" (click)="fileInput.click()">
+            <i class="fa-solid fa-file-arrow-up upload-icon"></i>
+            <p>Arrastra aquí tu archivo o haz click para seleccionar</p>
+            <input type="file" #fileInput (change)="onFileSelected($event)" style="display: none;">
+            <div class="selected-file-name" *ngIf="selectedFileName">{{ selectedFileName }}</div>
+            <button class="btn btn-primary" (click)="$event.stopPropagation(); onUploadFile()" style="margin-top: 15px;">
+              Subir a la Base de Datos
+            </button>
+          </div>
+        </div>
+        <div class="glass-card">
+          <h3><i class="fa-solid fa-folder-open text-primary"></i> Descargar por ID</h3>
+          <div class="download-box">
+            <input type="number" name="downloadFileId" [(ngModel)]="downloadFileId" placeholder="ID del archivo (Ej: 1)">
+            <button class="btn btn-outline" (click)="onDownloadFile()">
+              <i class="fa-solid fa-download"></i> Descargar
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="main-footer">
+    <p>&copy; 2026 ReservaEasy. Desarrollado con Angular para la materia de Web Client & Backend Development Framework.</p>
+  </footer>
+</div>
+
+<!-- MODAL: AUTHENTICATION -->
+<div class="modal-backdrop" [class.active]="showAuthModal">
+  <div class="glass-card modal-content animate-pop">
+    <button class="modal-close-btn" (click)="closeAuth()">&times;</button>
+    
+    <!-- Login Tab -->
+    <div *ngIf="authTab === 'login'">
+      <h2 class="modal-title"><i class="fa-solid fa-lock text-primary"></i> Iniciar Sesión</h2>
+      <form (submit)="onLogin()" class="auth-form">
+        <div class="form-group">
+          <label for="loginUsername">Usuario</label>
+          <input type="text" id="loginUsername" name="loginUsername" [(ngModel)]="loginUsername" required placeholder="Tu nombre de usuario">
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">Contraseña</label>
+          <input type="password" id="loginPassword" name="loginPassword" [(ngModel)]="loginPassword" required placeholder="••••••••">
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Ingresar</button>
+        <p class="auth-switch">¿No tienes cuenta? <a href="#" (click)="$event.preventDefault(); authTab = 'register'">Regístrate aquí</a></p>
+      </form>
+    </div>
+
+    <!-- Register Tab -->
+    <div *ngIf="authTab === 'register'">
+      <h2 class="modal-title"><i class="fa-solid fa-user-plus text-primary"></i> Registrarse</h2>
+      <form (submit)="onRegister()" class="auth-form">
+        <div class="form-group">
+          <label for="regUsername">Usuario</label>
+          <input type="text" id="regUsername" name="regUsername" [(ngModel)]="regUsername" required placeholder="Ej: luis123">
+        </div>
+        <div class="form-group">
+          <label for="regNombre">Nombre Completo</label>
+          <input type="text" id="regNombre" name="regNombre" [(ngModel)]="regNombre" required placeholder="Ej: Luis David Martínez">
+        </div>
+        <div class="form-group">
+          <label for="regEmail">Correo Electrónico</label>
+          <input type="email" id="regEmail" name="regEmail" [(ngModel)]="regEmail" required placeholder="Ej: luis@correo.com">
+        </div>
+        <div class="form-group">
+          <label for="regPassword">Contraseña</label>
+          <input type="password" id="regPassword" name="regPassword" [(ngModel)]="regPassword" required placeholder="Mínimo 4 caracteres">
+        </div>
+        <div class="form-group">
+          <label for="regRole">Rol de Usuario</label>
+          <select id="regRole" name="regRole" [(ngModel)]="regRole">
+            <option value="USER">Usuario Estándar (Hacer reservas)</option>
+            <option value="ADMIN">Administrador (Gestionar hotel)</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary btn-block">Crear Cuenta</button>
+        <p class="auth-switch">¿Ya tienes cuenta? <a href="#" (click)="$event.preventDefault(); authTab = 'login'">Inicia sesión</a></p>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: CREATE/EDIT BOOKING -->
+<div class="modal-backdrop" [class.active]="showBookingModal">
+  <div class="glass-card modal-content animate-pop">
+    <button class="modal-close-btn" (click)="closeBookingModal()">&times;</button>
+    <h2 class="modal-title">
+      <i class="fa-solid" [class.fa-calendar-days]="bookingId" [class.fa-calendar-plus]="!bookingId" [class.text-primary]="true"></i> 
+      {{ bookingId ? 'Modificar Reservación' : 'Reservar Habitación' }}
+    </h2>
+    
+    <div class="booking-room-summary glass-panel">
+      <div class="summary-details">
+        <p class="summary-label">Habitación Seleccionada</p>
+        <h4>{{ bookingSummaryTipo }}</h4>
+        <p>{{ bookingSummaryPrecio }}</p>
+      </div>
+    </div>
+
+    <form (submit)="onSaveBooking()" class="auth-form">
+      <div class="form-group">
+        <label for="bookingFechaInicio">Fecha de Entrada</label>
+        <input type="date" id="bookingFechaInicio" name="bookingFechaInicio" [(ngModel)]="bookingFechaInicio" (change)="calculateCost()" required>
+      </div>
+      <div class="form-group">
+        <label for="bookingFechaFin">Fecha de Salida</label>
+        <input type="date" id="bookingFechaFin" name="bookingFechaFin" [(ngModel)]="bookingFechaFin" (change)="calculateCost()" required>
+      </div>
+      <div class="form-group">
+        <label for="bookingDetalles">Notas adicionales / Peticiones especiales</label>
+        <textarea id="bookingDetalles" name="bookingDetalles" [(ngModel)]="bookingDetalles" rows="3" placeholder="Ej: Cuna para bebé, check-in tardío, etc."></textarea>
+      </div>
+
+      <div class="booking-cost-calc" *ngIf="calcNoches > 0">
+        <div class="calc-row">
+          <span>Noches:</span>
+          <span>{{ calcNoches }}</span>
+        </div>
+        <div class="calc-row total-row">
+          <span>Total estimado:</span>
+          <span>${{ calcTotal | number:'1.2-2' }} MXN</span>
+        </div>
+      </div>
+
+      <button type="submit" class="btn btn-primary btn-block">
+        {{ bookingId ? 'Guardar Cambios' : 'Confirmar Reservación' }}
+      </button>
+    </form>
+  </div>
+</div>
+
+<!-- TOAST NOTIFICATION SYSTEM -->
+<div class="toast-container" id="toastContainer">
+  <div class="toast" *ngFor="let toast of toasts" [class.toast-success]="toast.type === 'success'" [class.toast-error]="toast.type === 'error'" [class.toast-warning]="toast.type === 'warning'">
+    <i class="fa-solid toast-icon" [class.fa-circle-check]="toast.type === 'success'" [class.fa-circle-xmark]="toast.type === 'error'" [class.fa-triangle-exclamation]="toast.type === 'warning'"></i>
+    <div class="toast-content">{{ toast.message }}</div>
+  </div>
+</div>

@@ -1,0 +1,247 @@
+\documentclass[10pt,a4paper]{article}
+\usepackage[left=2cm,right=2cm,top=2cm,bottom=2cm]{geometry}
+\usepackage[dvipsnames]{xcolor}
+\usepackage[fleqn]{mathtools}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{latexsym}
+\usepackage[draft]{graphicx}
+\usepackage{nccmath}
+\usepackage{multicol}
+\usepackage{listings}
+\usepackage{tasks}
+\usepackage{color}
+\usepackage{float}
+\usepackage{lipsum}
+\usepackage{url}
+
+\definecolor{colorIPN}{rgb}{0.5, 0.0,0.13}
+\definecolor{colorESCOM}{rgb}{0.0, 0.5,1.0}
+\graphicspath{ {imagenes/} }
+
+\lstdefinestyle{macos_term}{
+    backgroundcolor=\color{black},
+    basicstyle=\color{white}\ttfamily\small,
+    breaklines=true,
+    frame=single,
+    rulecolor=\color{gray}
+}
+
+\begin{document}
+
+% --- TITLE PAGE ---
+\begin{titlepage}
+	\centering
+	{ \huge \bfseries \color{colorIPN}{Instituto Politécnico Nacional} \par}
+	{ \Large \bfseries  \color{colorESCOM}{Escuela Superior de Cómputo} \par }
+	\vspace{1.5cm}
+	{\huge\Large \color{colorIPN}{Web Client and Backend Development Framework}.\par}
+	\vspace{2cm}
+	{\huge\Large  \color{colorESCOM}{Reporte de Configuración SMTP y Envío de Correo Electrónico con Gmail y Spring Boot}\par}
+		\vspace{2.5cm}
+	{\Large\itshape \color{colorIPN}{Profesor: M. en C. José Asunción Enríquez Zárate}\par} \hfill \break
+	\vspace{2cm}
+	{\Large\itshape \color{colorIPN}{Alumno: Luis David Martínez Martínez}\par} \hfill \break
+	{\Large\itshape \color{colorIPN}{ld.martinez.117@gmail.com}\par} \hfill \break
+	{\Large\itshape \color{colorIPN}{7CM3} \par}
+	\vfill
+	{\large \color{colorIPN}{22 de Junio, 2026}\par} 
+	\vfill
+\end{titlepage}
+
+\lstset{ 
+	language=Java,
+	basicstyle=\small\sffamily,
+	numbers=left,
+	numberstyle=\tiny,
+	frame=tb,
+	tabsize=4,
+	columns=fixed,
+	showstringspaces=false,
+	showtabs=false,
+	keepspaces,
+	commentstyle=\color{Violet},
+	keywordstyle=\color{colorIPN} \bfseries,
+	stringstyle=\color{colorESCOM}
+}
+
+\tableofcontents 
+\pagebreak
+\listoffigures
+\pagebreak
+\listoftables
+\pagebreak
+\pagenumbering{arabic}
+
+% ################################################
+\section{\color{colorIPN}{Introducción}}
+
+El soporte para envío de notificaciones automáticas y alertas asíncronas es un requerimiento ineludible en el desarrollo de plataformas empresariales web. A través de este canal de comunicación, los sistemas notifican registros de cuenta, facturas digitales, o notificaciones sobre el estado de reservaciones.
+
+En el ecosistema Java, Spring Boot proporciona el starter de correo (\texttt{spring-boot-starter-mail}) para simplificar la integración de clientes SMTP. Sin embargo, para usar servidores de producción como Gmail en aplicaciones locales, se deben aplicar políticas estrictas de seguridad (como OAuth o contraseñas de aplicación) para evitar brechas de seguridad. En este reporte se detalla el flujo de configuración segura para interactuar con los servidores de Google y la implementación de un API simple en Spring Boot para realizar el envío.
+
+\pagebreak
+
+% ################################################
+\section{\color{colorIPN}{Conceptos}}
+
+\subsection{\textit{\color{colorESCOM}{Protocolo SMTP y puertos seguros}}}
+El protocolo SMTP (Simple Mail Transfer Protocol) es el estándar de red utilizado para el envío de correo. Para asegurar la transmisión de contraseñas y datos del correo, se utiliza STARTTLS sobre el puerto \texttt{587} o bien cifrado SSL directo sobre el puerto \texttt{465}.
+
+\subsection{\textit{\color{colorESCOM}{JavaMailSender}}}
+Es la interfaz principal provista por Spring Framework que unifica la creación y transmisión de mensajes de correo simple (\texttt{SimpleMailMessage}) o complejos en formato HTML (\texttt{MimeMessage}).
+
+\subsection{\textit{\color{colorESCOM}{Google App Passwords (Contraseñas de Aplicación)}}}
+Es un mecanismo provisto por Google para cuentas que tienen activada la autenticación en dos pasos (2FA). Consiste en generar un código de acceso único de 16 caracteres para autorizar que aplicaciones específicas de terceros interactúen con el servidor de correo emisor en nombre del usuario, omitiendo la contraseña principal.
+
+\pagebreak
+
+% ################################################
+\section{\color{colorIPN}{Desarrollo}}
+
+\subsection{\textit{\color{colorESCOM}{Paso 1: Configuración de la Cuenta de Google}}}
+Para permitir que Spring Boot use Gmail, el usuario debe realizar las siguientes acciones en la consola de seguridad de su cuenta Google:
+\begin{enumerate}
+    \item Activar la verificación en dos pasos (2FA).
+    \item Generar una contraseña de aplicación bajo la sección ``Seguridad''.
+    \item Copiar el token de 16 caracteres autogenerado.
+\end{enumerate}
+
+\subsection{\textit{\color{colorESCOM}{Paso 2: Dependencias del Proyecto}}}
+En el archivo \texttt{pom.xml} del backend se incorporó la librería de mensajería:
+\begin{lstlisting}[language=XML]
+<dependency>
+    <groupId>org.springframework.boot</groupId>
+    <artifactId>spring-boot-starter-mail</artifactId>
+</dependency>
+\end{lstlisting}
+
+\subsection{\textit{\color{colorESCOM}{Paso 3: Propiedades del Servidor SMTP}}}
+En el archivo de configuración \texttt{application.properties} se agregaron los parámetros de red correspondientes a Google Mail:
+\begin{lstlisting}
+spring.mail.host=smtp.gmail.com
+spring.mail.port=587
+spring.mail.username=${MAIL_USERNAME}
+spring.mail.password=${MAIL_PASSWORD}
+spring.mail.properties.mail.smtp.auth=true
+spring.mail.properties.mail.smtp.starttls.enable=true
+\end{lstlisting}
+Las variables de entorno son cargadas dinámicamente desde el archivo de secretos locales \texttt{.env}.
+
+\subsection{\textit{\color{colorESCOM}{Paso 4: Implementación del Servicio de Correo}}}
+Se estructuró la interfaz del servicio y su clase concreta de implementación:
+\begin{lstlisting}[language=Java]
+@Service
+@RequiredArgsConstructor
+public class MailServiceImpl implements MailService {
+    private final JavaMailSender mailSender;
+
+    @Override
+    public void sendEmail(String to, String subject, String body) {
+        try {
+            SimpleMailMessage message = new SimpleMailMessage();
+            message.setFrom("no-reply@reservaciones.com");
+            message.setTo(to);
+            message.setSubject(subject);
+            message.setText(body);
+            mailSender.send(message);
+        } catch (Exception e) {
+            System.err.println("Fallo al enviar correo: " + e.getMessage());
+        }
+    }
+}
+\end{lstlisting}
+
+\pagebreak
+
+% ################################################
+\section{\color{colorIPN}{Resultados}}
+
+Para constatar el funcionamiento del correo, se expuso un controlador dedicado:
+\begin{lstlisting}[language=Java]
+@RestController
+@RequestMapping("/api/v1/mail")
+@RequiredArgsConstructor
+public class MailController {
+    private final MailService mailService;
+
+    @PostMapping("/send-test")
+    public ResponseEntity<String> sendTestEmail(
+            @RequestParam String to,
+            @RequestParam String subject,
+            @RequestParam String body) {
+        mailService.sendEmail(to, subject, body);
+        return ResponseEntity.ok("Correo enviado con exito.");
+    }
+}
+\end{lstlisting}
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\linewidth]{test_mail_send}
+    \caption{Petición de prueba para el envío de correo desde la interfaz de Swagger UI.}
+    \label{fig:test_mail_send}
+\end{figure}
+
+El destinatario del correo recibe una notificación en su bandeja de entrada detallando el cuerpo del mensaje redactado, confirmando la correcta comunicación con los servidores SMTP de Google.
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\linewidth]{inbox_confirm}
+    \caption{Evidencia de correo electrónico recibido de forma exitosa en el cliente de correo.}
+    \label{fig:inbox_confirm}
+\end{figure}
+
+\pagebreak
+
+% ################################################
+\section{\color{colorIPN}{Conclusión}}
+
+La integración de SMTP mediante el starter de Spring Boot facilita el desarrollo de notificaciones por correo. Se ha comprobado que el esquema de contraseñas de aplicación permite utilizar servidores de producción como Gmail en entornos de pruebas de forma muy sencilla, manteniendo los estándares de seguridad de datos exigidos hoy en día por la industria.
+
+\begin{table}[htb]
+    \centering
+    \begin{tabular}{p{4cm}|p{2cm}|p{2cm}}\hline \hline
+        Criterio     & Puntos  & Realizado \\ \hline \hline
+        Portada           &  Sin  & 100\% \\ \hline 
+        Introducción      &  2  & 2 \\ \hline 
+        Conceptos         &  2  & 2 \\ \hline 
+        Desarrollo        &  2  & 2 \\ \hline 
+        Resultados        &  2  & 2 \\ \hline 
+        Conclusiones      &  1  & 1 \\ \hline 
+        Referencias       &  1  & 1 \\ \hline
+        Total             &  10  & 10 \\ \hline \hline
+    \end{tabular}
+    \caption{Evaluación de Criterios Práctica 2}
+    \label{tabla:EvaluacionT2}
+\end{table}
+
+\color{colorIPN}{
+	\begin{flushright}
+		\textit{
+			Luis David Martínez Martínez
+		}
+	\end{flushright} \hfill \break
+}
+
+\pagebreak
+
+% ################################################
+\section{\color{colorIPN}{Referencias Bibliográficas}}
+\color{colorESCOM}{
+	\begin{thebibliography}{10}
+    \bibitem[Google Security, 2026]{GoogleSec}
+    Google Help.
+    \newblock {\em Sign in using App Passwords.}
+    \newblock Google Accounts Support. Disponible en:\\ 
+    \url{https://support.google.com/accounts/answer/185833}
+
+    \bibitem[Spring Mail, 2026]{SpringMailDoc}
+    Spring Projects.
+    \newblock {\em Email integration in Spring Framework.}
+    \newblock VMware. Disponible en:\\ 
+    \url{https://docs.spring.io/spring-framework/docs/current/reference/html/integration.html#mail}
+\end{thebibliography}
+}
+
+\end{document}
