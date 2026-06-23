@@ -42,8 +42,8 @@ export class HotelService {
   // CONFIGURACION: Reemplaza la URL de abajo con la URL real de tu servicio web en Render
   private apiBase = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
     ? 'http://localhost:8090'
-    : 'https://REEMPLAZAR_CON_TU_BACKEND_EN_RENDER.onrender.com';
-  
+    : 'https://reservaciones-uknp.onrender.com';
+
   private userSubject = new BehaviorSubject<User | null>(
     JSON.parse(localStorage.getItem('user') || 'null')
   );
