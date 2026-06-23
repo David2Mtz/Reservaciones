@@ -39,7 +39,10 @@ export interface Booking {
   providedIn: 'root'
 })
 export class HotelService {
-  private apiBase = 'http://localhost:8090';
+  // CONFIGURACION: Reemplaza la URL de abajo con la URL real de tu servicio web en Render
+  private apiBase = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+    ? 'http://localhost:8090'
+    : 'https://REEMPLAZAR_CON_TU_BACKEND_EN_RENDER.onrender.com';
   
   private userSubject = new BehaviorSubject<User | null>(
     JSON.parse(localStorage.getItem('user') || 'null')

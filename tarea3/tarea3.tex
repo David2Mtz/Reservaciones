@@ -5,7 +5,7 @@
 \usepackage{booktabs}
 \usepackage{amsmath}
 \usepackage{latexsym}
-\usepackage[draft]{graphicx}
+\usepackage{graphicx}
 \usepackage{nccmath}
 \usepackage{multicol}
 \usepackage{listings}
@@ -203,31 +203,83 @@ const rooms = await fetch('http://localhost:8090/api/v1/cuartos', {
 % ################################################
 \section{\color{colorIPN}{Resultados e Integración}}
 
-La aplicación Front End cuenta con un diseño dinámico oscuro que reacciona según la sesión del usuario.
+Para comprobar la correcta integración del Back End en Spring Boot y el Front End en Angular 19, se definieron casos de prueba simulando el comportamiento del sistema según los roles del usuario autenticado. A continuación, se detallan los resultados y evidencias de cada caso de prueba.
+
+\subsection{\color{colorESCOM}{Flujo de Trabajo del Cliente (ROLE\_USER)}}
+
+\noindent El usuario cliente tiene un flujo orientado a la visualización de habitaciones disponibles y a la autogestión de sus reservaciones.
+
+\begin{enumerate}
+    \item \textbf{Autenticación y Registro:} El cliente inicia sesión a través del modal interactivo. La aplicación envía las credenciales en Base64 en la cabecera HTTP de autorización. Al confirmarse el éxito, se almacena la sesión y se habilitan dinámicamente en el menú las opciones de ``Mis Reservas'' y ``Documentos''.
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.75\linewidth]{frontend_loginForm.png}
+        \caption{Interfaz de inicio de sesión y registro de usuarios en la Single Page Application.}
+    \end{figure}
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.75\linewidth]{frontend_login.png}
+        \caption{Inicio de sesión correcto.}
+    \end{figure}
+
+    \item \textbf{Inspección de Habitaciones:} El catálogo principal consulta el endpoint GET \texttt{/api/v1/cuartos}. El sistema renderiza las habitaciones en una cuadrícula responsiva, mostrando su tipo, precio, camas y estado. Si una habitación no está libre, se deshabilita automáticamente su botón de reserva.
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.75\linewidth]{frontend_rooms}
+        \caption{Catálogo dinámico de habitaciones cargado desde la base de datos MySQL.}
+        \label{fig:frontend_rooms}
+    \end{figure}
+
+    \item \textbf{Proceso de Reservación con Cotización Dinámica:} Al hacer clic en ``Reservar'', se despliega un formulario modal. Cuando el usuario selecciona las fechas de entrada y salida, la aplicación calcula en tiempo real el costo estimado multiplicando el precio de la habitación por el número de noches. Al enviar, el Back End valida que no existan traslapes de fechas, guarda la reservación como ``CONFIRMADA'' y dispara la notificación por correo SMTP.
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.75\linewidth]{frontend_booking_modal}
+        \caption{Modal interactivo de reservación mostrando la cotización calculada en tiempo real.}
+        \label{fig:frontend_booking_modal}
+    \end{figure}
+
+    \item \textbf{Gestión de Reservaciones Propias (Historial y Cancelación):} El usuario accede a la vista ``Mis Reservas'' (GET \texttt{/api/v1/reservaciones/usuario/\{id\}}). Aquí visualiza sus estancias. Si el estado es ``CONFIRMADA'', se muestran opciones para editar las fechas o cancelar la reserva (DELETE \texttt{/api/v1/reservaciones/\{id\}}), lo que actualiza el estado a ``CANCELADA'' y envía la alerta de correo electrónico.
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.75\linewidth]{frontend_bookings}
+        \caption{Sección de Mis Reservas del cliente, con opciones para modificar fechas o cancelar.}
+        \label{fig:frontend_bookings}
+    \end{figure}
+\end{enumerate}
+
+\pagebreak
+
+\subsection{\color{colorESCOM}{Flujo de Trabajo del Administrador (ROLE\_ADMIN)}}
+
+\noindent El usuario administrador cuenta con permisos globales sobre la plataforma para gestionar el catálogo físico de habitaciones del hotel y realizar auditorías.
+
+\begin{enumerate}
+    \item \textbf{Administración del Inventario de Cuartos:} Al acceder con el rol de administrador, la SPA habilita la vista ``Panel Admin''. A través del formulario de carga, el administrador registra nuevas habitaciones indicando precio, número y camas, o bien selecciona habitaciones existentes para editar sus características o eliminarlas de la base de datos.
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.75\linewidth]{frontend_admin_rooms}
+        \caption{Formulario administrativo para el control del inventario de habitaciones (CRUD).}
+        \label{fig:frontend_admin_rooms}
+    \end{figure}
+
+    \item \textbf{Auditoría y Cancelación Global de Reservaciones:} En la misma vista administrativa, se muestra una tabla dinámica que recopila todas las reservas realizadas por todos los usuarios del sistema. El administrador puede verificar quién ha reservado cada cuarto y tiene la facultad de cancelar cualquier reserva activa por motivos operativos.
+    \begin{figure}[H]
+        \centering
+        \includegraphics[width=0.75\linewidth]{frontend_admin}
+        \caption{Tabla de auditoría global de reservaciones del sistema para ROLE\_ADMIN.}
+        \label{fig:frontend_admin}
+    \end{figure}
+\end{enumerate}
+
+\subsection{\color{colorESCOM}{Gestión y Soporte de Archivos en la Base de Datos}}
+
+\noindent Como soporte de negocio, los usuarios pueden subir archivos adjuntos (identificación oficial, comprobante de pago) y descargarlos asociándolos a su ID de archivo.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.75\linewidth]{frontend_rooms}
-    \caption{Visualización del catálogo de habitaciones disponibles en la interfaz web.}
-    \label{fig:frontend_rooms}
-\end{figure}
-
-Al registrar una reserva, se ejecuta una petición POST al backend. El sistema verifica la disponibilidad del cuarto en las fechas indicadas, calcula el costo total, guarda el registro en la base de datos y envía automáticamente un correo de confirmación.
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.75\linewidth]{frontend_bookings}
-    \caption{Listado de reservaciones de un cliente autenticado, permitiendo modificar fechas o cancelar.}
-    \label{fig:frontend_bookings}
-\end{figure}
-
-Si el usuario inicia sesión con una cuenta que tiene el rol de administrador, la interfaz habilita la pestaña ``Panel Admin'', permitiendo agregar habitaciones y ver las reservas de todos los clientes de la base de datos.
-
-\begin{figure}[H]
-    \centering
-    \includegraphics[width=0.75\linewidth]{frontend_admin}
-    \caption{Panel administrativo exclusivo para usuarios con ROLE\_ADMIN.}
-    \label{fig:frontend_admin}
+    \includegraphics[width=0.75\linewidth]{frontend_files}
+    \caption{Módulo de carga y descarga de comprobantes persistidos en formato BLOB en MySQL.}
+    \label{fig:frontend_files}
 \end{figure}
 
 \pagebreak

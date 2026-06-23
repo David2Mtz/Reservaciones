@@ -5,7 +5,7 @@
 \usepackage{booktabs}
 \usepackage{amsmath}
 \usepackage{latexsym}
-\usepackage[draft]{graphicx}
+\usepackage{graphicx}
 \usepackage{nccmath}
 \usepackage{multicol}
 \usepackage{listings}
@@ -178,16 +178,16 @@ public class MailController {
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.75\linewidth]{test_mail_send}
+    \includegraphics[width=0.75\linewidth]{email-endpoint.png}
     \caption{Petición de prueba para el envío de correo desde la interfaz de Swagger UI.}
     \label{fig:test_mail_send}
 \end{figure}
 
-El destinatario del correo recibe una notificación en su bandeja de entrada detallando el cuerpo del mensaje redactado, confirmando la correcta comunicación con los servidores SMTP de Google.
+El destinatario del correo recibe una notificación en su bandeja de entrada detallando el cuerpo del mensaje redactado, confirmando la correcta comunicación con los servidores SMTP de Google. Además de poder observarse en la parte superior derecha que la cuenta de correo revisada no es la misma que la perteneciente al emisor del correo.
 
 \begin{figure}[H]
     \centering
-    \includegraphics[width=0.75\linewidth]{inbox_confirm}
+    \includegraphics[width=0.75\linewidth]{email-recibido.png}
     \caption{Evidencia de correo electrónico recibido de forma exitosa en el cliente de correo.}
     \label{fig:inbox_confirm}
 \end{figure}
